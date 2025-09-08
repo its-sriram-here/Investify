@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investify - Groww Clone - 𝙎𝙧𝙞𝙧𝙖𝙢</title>\
+     <link rel="icon" href="Sriram2.jpg">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to enhance the look and feel */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9f9f9;
+        }
+        .main-green {
+            color: #00d09c;
+        }
+        .bg-main-green {
+            background-color: #00d09c;
+        }
+        .border-main-green {
+            border-color: #00d09c;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        /* Page transition effect */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .active-page {
+            display: block;
+        }
+        .nav-link.active {
+            color: #00d09c;
+            border-bottom: 2px solid #00d09c;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00d09c;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tick-path {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw-tick 0.8s 0.3s ease-out forwards;
+        }
+
+        @keyframes draw-tick {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .input-error {
+            animation: shake 0.6s ease-in-out;
+            border-color: #ef4444; /* red-500 */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-8">
+                <a href="#" class="text-2xl font-bold main-green">Investify</a>
+                <div class="hidden md:flex items-center space-x-6">
+                    <button data-page="dashboard" class="nav-link active font-semibold text-gray-600 hover:text-green-500 transition pb-5 -mb-5" onclick="switchTab(this)">Dashboard</button>
+                    <button data-page="mutual-funds" class="nav-link font-semibold text-gray-600 hover:text-green-500 transition pb-5 -mb-5" onclick="switchTab(this)">Mutual Funds</button>
+                    <button data-page="ipos" class="nav-link font-semibold text-gray-600 hover:text-green-500 transition pb-5 -mb-5" onclick="switchTab(this)">IPOs</button>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="relative hidden sm:block">
+                    <input type="text" id="search-input" placeholder="Search stocks or funds..." class="border rounded-lg py-2 px-4 w-48 lg:w-64 focus:outline-none focus:ring-2 focus:ring-green-300">
+                    <svg class="w-5 h-5 absolute right-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div class="relative">
+                    <button id="profile-btn" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </button>
+                     <!-- Profile Dropdown -->
+                    <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border z-50">
+                        <div class="p-4 border-b">
+                            <div class="flex items-center space-x-3 mb-4">
+                                <img src="Sriram3.jpg" onerror="this.onerror=null;this.src='https://placehold.co/48x48/EFEFEF/AAAAAA&text=A';" alt="User" class="w-12 h-12 rounded-full">
+                                <div>
+                                    <p class="font-bold text-md">𝙎𝙧𝙞𝙧𝙖𝙢</p>
+                                    <p class="text-sm text-gray-500">Age: 21</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <p class="text-gray-500">DEMAT Account No.</p>
+                                <p class="font-semibold">IN1831020610</p>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                             <h4 class="font-bold text-sm mb-3">Transaction History</h4>
+                             <div id="transaction-history-list" class="space-y-3 max-h-48 overflow-y-auto">
+                                <!-- Transaction history will be dynamically inserted here -->
+                             </div>
+                        </div>
+                        <div class="p-2 bg-gray-50 rounded-b-xl">
+                            <button class="w-full text-center py-2 hover:bg-gray-100 rounded-lg text-sm font-semibold">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page active-page">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Column -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Portfolio Summary -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-xl font-bold mb-4">Your Portfolio</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                            <div>
+                                <p class="text-sm text-gray-500">Invested</p>
+                                <p id="portfolio-invested" class="text-2xl font-semibold mt-1">₹0</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Current Value</p>
+                                <p id="portfolio-current" class="text-2xl font-semibold mt-1">₹0</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Total Returns</p>
+                                <p id="portfolio-returns" class="text-2xl font-semibold mt-1 text-gray-800">₹0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Your Investments -->
+                    <div>
+                        <h2 class="text-2xl font-bold mb-4">Your Investments</h2>
+                        <div id="your-investments-list" class="space-y-4">
+                            <!-- User's investments will be dynamically inserted here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Column -->
+                <div class="lg:col-span-1 space-y-8">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-4">Market Movers</h2>
+                        <div id="dashboard-market-movers" class="space-y-4">
+                            <!-- Market movers will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mutual Funds Page -->
+        <div id="mutual-funds-page" class="page">
+            <h1 class="text-3xl font-bold mb-2">Explore Mutual Funds</h1>
+            <p class="text-gray-500 mb-6">Find the best funds to invest in, curated for you.</p>
+            <div id="mutual-funds-list" class="space-y-4">
+                <!-- Mutual funds list will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- IPOs Page -->
+        <div id="ipos-page" class="page">
+            <h1 class="text-3xl font-bold mb-2">Initial Public Offerings (IPOs)</h1>
+            <p class="text-gray-500 mb-6">Invest in companies as they go public.</p>
+            <div id="ipos-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <!-- IPOs list will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Details Page -->
+        <div id="details-page" class="page">
+            <button class="mb-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition" onclick="goBack()">← Back</button>
+            <div id="details-content" class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-6">
+                    <div>
+                        <h2 id="details-name" class="text-3xl font-bold"></h2>
+                        <p id="details-category" class="text-gray-500"></p>
+                    </div>
+                    <div class="text-right mt-4 md:mt-0">
+                         <p class="text-3xl font-bold text-green-600" id="details-value"></p>
+                         <p class="text-sm text-red-500" id="details-change"></p>
+                    </div>
+                </div>
+                <div class="h-96 mb-6">
+                    <canvas id="details-chart"></canvas>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6">
+                    <div>
+                        <p class="text-sm text-gray-500">1Y Return</p>
+                        <p id="details-1y" class="font-semibold text-lg"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">3Y Return</p>
+                        <p id="details-3y" class="font-semibold text-lg"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">5Y Return</p>
+                        <p id="details-5y" class="font-semibold text-lg"></p>
+                    </div>
+                     <div>
+                        <p class="text-sm text-gray-500">Rating</p>
+                        <p id="details-rating" class="font-semibold text-lg"></p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="sell-btn-details" class="w-full bg-white text-red-500 border border-red-500 py-3 rounded-lg font-semibold hover:bg-red-50 transition">SELL</button>
+                    <button id="buy-btn-details" class="w-full bg-main-green text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition">BUY</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Page -->
+        <div id="payment-page" class="page">
+             <button class="mb-6 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition" onclick="goBackToDetails()">← Back</button>
+            <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+                <h2 id="payment-title" class="text-2xl font-bold text-center mb-2"></h2>
+                <p id="payment-fund-name" class="text-center text-gray-600 mb-8"></p>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700">Amount (₹)</label>
+                        <input type="number" id="amount" placeholder="e.g., 5000" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                     <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" id="quantity" placeholder="e.g., 10" class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:outline-none focus:ring-2 focus:ring-green-400">
+                    </div>
+                </div>
+                
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-center text-gray-600">
+                        <span>Available Funds:</span>
+                        <span class="font-semibold">₹2,50,000.00</span>
+                    </div>
+                </div>
+
+                <button id="confirm-payment-btn" class="w-full mt-8 text-white py-3 rounded-lg font-semibold transition">Confirm Order</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- SIP Calculator Section -->
+    <section class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold mb-1">SIP Calculator</h2>
+            <p class="text-gray-500 mb-6">Estimate the future value of your monthly investments.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <!-- Calculator Inputs -->
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="monthly-investment" class="font-medium">Monthly Investment</label>
+                            <span class="px-3 py-1 rounded-md bg-green-100 text-green-800 font-semibold text-sm">₹ <input type="number" id="monthly-investment-text" class="bg-transparent w-20 focus:outline-none" value="10000"></span>
+                        </div>
+                        <input type="range" id="monthly-investment-slider" min="500" max="100000" step="500" value="10000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="return-rate" class="font-medium">Expected Return Rate (% p.a.)</label>
+                            <span class="px-3 py-1 rounded-md bg-green-100 text-green-800 font-semibold text-sm"><input type="number" id="return-rate-text" class="bg-transparent w-12 text-right focus:outline-none" value="12"> %</span>
+                        </div>
+                        <input type="range" id="return-rate-slider" min="1" max="30" step="0.5" value="12" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="time-period" class="font-medium">Time Period (Years)</label>
+                            <span class="px-3 py-1 rounded-md bg-green-100 text-green-800 font-semibold text-sm"><input type="number" id="time-period-text" class="bg-transparent w-12 text-right focus:outline-none" value="10"> Yrs</span>
+                        </div>
+                         <input type="range" id="time-period-slider" min="1" max="40" step="1" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                <!-- Calculator Results -->
+                <div class="text-center bg-gray-50 p-6 rounded-lg">
+                    <div class="mb-4">
+                        <p class="text-gray-500 text-sm">Invested Amount</p>
+                        <p id="sip-invested" class="text-2xl font-semibold">₹12,00,000</p>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-gray-500 text-sm">Est. Returns</p>
+                        <p id="sip-returns" class="text-2xl font-semibold main-green">₹11,20,169</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Value</p>
+                        <p id="sip-total" class="text-3xl font-bold">₹23,20,169</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white">
+        <div class="container mx-auto px-8 py-12">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+                <div class="col-span-2 lg:col-span-1">
+                    <a href="#" class="text-3xl font-bold text-white">Investify</a>
+                    <p class="text-gray-400 mt-2 text-sm">Your trusted investment partner.</p>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-4">Products</h3>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li><a href="#" class="hover:text-white">Stocks</a></li>
+                        <li><a href="#" class="hover:text-white">Mutual Funds</a></li>
+                        <li><a href="#" class="hover:text-white">IPOs</a></li>
+                        <li><a href="#" class="hover:text-white">US Stocks</a></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-bold mb-4">Company</h3>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li><a href="#" class="hover:text-white">About Us</a></li>
+                        <li><a href="#" class="hover:text-white">Careers</a></li>
+                        <li><a href="#" class="hover:text-white">Press</a></li>
+                        <li><a href="#" class="hover:text-white">Contact</a></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-bold mb-4">Support</h3>
+                    <ul class="space-y-2 text-gray-300 text-sm">
+                        <li><a href="#" class="hover:text-white">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white">FAQs</a></li>
+                        <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+                        <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-bold mb-4">Follow Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="https://www.facebook.com/share/1GbRW6534V/" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" /></svg>
+                        </a>
+                        <a href="https://instagram.com/its_sriram_here" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 016.345 2.525c.636-.247 1.363-.416 2.427.465C9.793 2.013 10.147 2 12.315 2zm-1.161 3.093a6.035 6.035 0 00-2.106.452c-1.171.324-2.028.9-2.715 1.771a4.615 4.615 0 00-1.22 2.433c-.15.864-.225 1.79-.225 2.74s.074 1.876.225 2.74c.264 1.503.93 2.71 2.14 3.51a5.862 5.862 0 003.52 1.29c.864.15 1.79.225 2.74.225s1.876-.074 2.74-.225a5.862 5.862 0 003.52-1.29c1.21-.8 1.876-2.007 2.14-3.51.15-.864.225-1.79.225-2.74s-.074-1.876-.225-2.74a4.615 4.615 0 00-1.22-2.433 4.622 4.622 0 00-2.715-1.77c-1.171-.324-2.028-.9-2.715-1.771a6.035 6.035 0 00-2.106-.452c-.864-.15-1.79-.225-2.74-.225s-1.876.074-2.74.225z" clip-rule="evenodd" /></svg>
+                        </a>
+                        <a href="https://www.linkedin.com/in/sriram-murugesan-33aab531a" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.71v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" /></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-sm text-gray-400">
+                <p>&copy; 2025 Investify. All Rights Reserved.</p>
+                <p class="mt-1">This is a clone website created by  𝙎𝙧𝙞𝙧𝙖𝙢.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Transaction Confirmation Modal -->
+    <div id="confirmation-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform transition-all" style="animation: zoomIn 0.3s ease-out;">
+             <svg class="w-24 h-24 mx-auto text-green-500 mb-4" viewBox="0 0 52 52">
+                <circle class="text-gray-200" cx="26" cy="26" r="25" fill="none" stroke-width="2"/>
+                <path class="tick-path" fill="none" stroke="#00d09c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M14 27l5.917 4.93L37.083 22"/>
+            </svg>
+            <h2 class="text-2xl font-bold mb-2">Order Successful!</h2>
+            <p id="confirmation-fund-name" class="text-gray-600 mb-6"></p>
+
+            <div class="text-left bg-gray-50 p-4 rounded-lg space-y-3">
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Quantity:</span><span id="confirmation-quantity" class="font-semibold"></span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Price per unit:</span><span id="confirmation-price" class="font-semibold"></span></div>
+                <div class="flex justify-between text-sm"><span class="text-gray-500">Date & Time:</span><span id="confirmation-datetime" class="font-semibold"></span></div>
+            </div>
+            
+            <button onclick="closeConfirmationModal()" class="w-full mt-8 bg-main-green text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition">Done</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 right-10 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-xl transition-opacity duration-300 opacity-0">
+        Order placed successfully!
+    </div>
+    
+    <!-- Loader element -->
+    <div id="loader-overlay" class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="loader"></div>
+    </div>
+
+
+    <script>
+        // --- MOCK API DATA & STATE ---
+        const mockApiData = {
+            mutualFunds: [
+                { id: 1, name: 'Parag Parikh Flexi Cap Fund', category: 'Flexi Cap', rating: 5, '1y': 38.4, '3y': 22.1, '5y': 23.9, nav: 75.3, change: -0.2, graphData: [60, 62, 61, 65, 64, 68, 70, 72, 71, 74, 73, 75.3] },
+                { id: 2, name: 'Quant Small Cap Fund', category: 'Small Cap', rating: 4, '1y': 66.8, '3y': 44.2, '5y': 48.7, nav: 268.1, change: 1.5, graphData: [150, 160, 180, 175, 200, 210, 225, 240, 235, 250, 260, 268.1] },
+                { id: 3, name: 'Axis Bluechip Fund', category: 'Large Cap', rating: 3, '1y': 24.5, '3y': 13.9, '5y': 16.2, nav: 59.8, change: 0.8, graphData: [45, 46, 48, 47, 50, 52, 51, 55, 56, 58, 57, 59.8] },
+                { id: 4, name: 'ICICI Prudential Technology Fund', category: 'Sectoral/Thematic', rating: 4, '1y': 45.1, '3y': 15.6, '5y': 25.8, nav: 180.2, change: -1.1, graphData: [120, 130, 125, 140, 150, 145, 160, 170, 175, 185, 182, 180.2] },
+                 { id: 5, name: 'Mirae Asset Large Cap Fund', category: 'Large Cap', rating: 5, '1y': 25.9, '3y': 14.5, '5y': 17.8, nav: 102.4, change: 0.5, graphData: [80, 82, 85, 84, 88, 90, 92, 95, 98, 100, 101, 102.4] }
+            ],
+            ipos: [
+                { id: 1, name: 'Zomato', openDate: 'Jul 14, 2024', closeDate: 'Jul 16, 2024', price: '₹72 - ₹76', status: 'Closed' },
+                { id: 2, name: 'Paytm (One97)', openDate: 'Nov 8, 2024', closeDate: 'Nov 10, 2024', price: '₹2080 - ₹2150', status: 'Closed' },
+                { id: 3, name: 'Ola Electric', openDate: 'Sep 15, 2025', closeDate: 'Sep 18, 2025', price: '₹1200 - ₹1250', status: 'Upcoming' },
+                { id: 4, name: 'Swiggy', openDate: 'Oct 5, 2025', closeDate: 'Oct 8, 2025', price: '₹450 - ₹480', status: 'Upcoming' },
+                { id: 5, name: 'Nykaa', openDate: 'Oct 28, 2024', closeDate: 'Nov 1, 2024', price: '₹1085 - ₹1125', status: 'Closed' },
+                { id: 6, name: 'Go Digit Insurance', openDate: 'Nov 2, 2025', closeDate: 'Nov 5, 2025', price: '₹350 - ₹375', status: 'Upcoming' }
+            ],
+            transactions: [
+                 { fundName: 'Parag Parikh Flexi', date: 'Aug 12, 2025', quantity: 25, type: 'buy' },
+                 { fundName: 'Axis Bluechip Fund', date: 'Aug 28, 2025', quantity: 5, type: 'sell' },
+                 { fundName: 'Quant Small Cap', date: 'Sep 05, 2025', quantity: 10, type: 'buy' }
+            ],
+            userPortfolio: [
+                { fundId: 1, quantity: 20, avgNav: 68.5 }, // Parag Parikh
+                { fundId: 3, quantity: 50, avgNav: 52.1 }, // Axis Bluechip
+                { fundId: 4, quantity: 10, avgNav: 155.8 }  // ICICI Tech
+            ]
+        };
+
+        let currentChart = null;
+        let lastPage = 'dashboard';
+        let currentFundId = null;
+        let currentTransactionDetails = {};
+
+        // --- DOM ELEMENTS ---
+        const pages = document.querySelectorAll('.page');
+        const navLinks = document.querySelectorAll('.nav-link');
+        const loader = document.getElementById('loader-overlay');
+        const searchInput = document.getElementById('search-input');
+        const profileBtn = document.getElementById('profile-btn');
+        const profileDropdown = document.getElementById('profile-dropdown');
+        
+        // --- PROFILE DROPDOWN & TRANSACTIONS ---
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            renderTransactionHistory();
+            profileDropdown.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!profileDropdown.classList.contains('hidden') && !profileBtn.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+        });
+        
+        function renderTransactionHistory() {
+            const container = document.getElementById('transaction-history-list');
+            container.innerHTML = '';
+            if (mockApiData.transactions.length === 0) {
+                 container.innerHTML = `<p class="text-sm text-gray-500 text-center">No recent transactions.</p>`;
+                 return;
+            }
+
+            // Show latest transactions first
+            [...mockApiData.transactions].reverse().forEach(tx => {
+                const isBuy = tx.type === 'buy';
+                const textColor = isBuy ? 'text-green-600' : 'text-red-500';
+                const sign = isBuy ? '+' : '-';
+
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-sm">
+                        <div>
+                            <p class="font-semibold">${tx.fundName}</p>
+                            <p class="text-xs text-gray-400">${tx.date}</p>
+                        </div>
+                        <p class="font-semibold ${textColor}">${sign} ${tx.quantity} Units</p>
+                    </div>
+                `;
+            });
+        }
+        
+        // --- SIP CALCULATOR ---
+        const monthlyInvestmentSlider = document.getElementById('monthly-investment-slider');
+        const monthlyInvestmentText = document.getElementById('monthly-investment-text');
+        const returnRateSlider = document.getElementById('return-rate-slider');
+        const returnRateText = document.getElementById('return-rate-text');
+        const timePeriodSlider = document.getElementById('time-period-slider');
+        const timePeriodText = document.getElementById('time-period-text');
+
+        const sipInvested = document.getElementById('sip-invested');
+        const sipReturns = document.getElementById('sip-returns');
+        const sipTotal = document.getElementById('sip-total');
+        
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+            }).format(value);
+        }
+
+        function calculateSip() {
+            const P = parseFloat(monthlyInvestmentSlider.value);
+            const r = parseFloat(returnRateSlider.value);
+            const t = parseFloat(timePeriodSlider.value);
+
+            const n = t * 12; // Number of months
+            const i = r / 12 / 100; // Monthly interest rate
+
+            const totalInvestment = P * n;
+            const futureValue = P * ( (Math.pow(1 + i, n) - 1) / i ) * (1 + i);
+            const estimatedReturns = futureValue - totalInvestment;
+
+            sipInvested.innerText = formatCurrency(totalInvestment);
+            sipReturns.innerText = formatCurrency(estimatedReturns);
+            sipTotal.innerText = formatCurrency(futureValue);
+        }
+
+        function syncInputs(slider, textInput) {
+             slider.addEventListener('input', () => {
+                textInput.value = slider.value;
+                calculateSip();
+            });
+             textInput.addEventListener('input', () => {
+                slider.value = textInput.value;
+                 calculateSip();
+            });
+        }
+        
+        syncInputs(monthlyInvestmentSlider, monthlyInvestmentText);
+        syncInputs(returnRateSlider, returnRateText);
+        syncInputs(timePeriodSlider, timePeriodText);
+
+
+        // --- LIVE SEARCH ---
+        searchInput.addEventListener('keyup', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm.length > 0) {
+                if (!document.querySelector('.nav-link[data-page="mutual-funds"]').classList.contains('active')) {
+                    switchTab(document.querySelector('.nav-link[data-page="mutual-funds"]'));
+                }
+            }
+            const filteredFunds = mockApiData.mutualFunds.filter(fund => 
+                fund.name.toLowerCase().includes(searchTerm)
+            );
+            renderMutualFunds(filteredFunds);
+        });
+
+        // --- PAGE NAVIGATION ---
+        function showPage(pageId) {
+            const currentPage = Array.from(pages).find(p => p.classList.contains('active-page'));
+            if(currentPage) lastPage = currentPage.id;
+
+            pages.forEach(page => {
+                page.classList.remove('active-page');
+            });
+            document.getElementById(pageId + '-page').classList.add('active-page');
+        }
+        
+        function switchTab(element) {
+            navLinks.forEach(link => link.classList.remove('active'));
+            element.classList.add('active');
+            const pageId = element.getAttribute('data-page');
+            showPage(pageId);
+        }
+
+        function goBack() {
+             showPage(lastPage.replace('-page', ''));
+        }
+        
+        function goBackToDetails() {
+            if (currentFundId) {
+                showDetailsPage(currentFundId);
+            } else {
+                goBack();
+            }
+        }
+
+
+        // --- RENDERING FUNCTIONS ---
+        function showLoader() {
+            loader.classList.remove('hidden');
+        }
+        function hideLoader() {
+            loader.classList.add('hidden');
+        }
+        
+        function renderDashboard() {
+            renderPortfolioSummary();
+            renderYourInvestments();
+            renderMarketMovers();
+        }
+
+        function renderPortfolioSummary() {
+            const portfolio = mockApiData.userPortfolio;
+            const funds = mockApiData.mutualFunds;
+
+            let totalInvested = 0;
+            let totalCurrentValue = 0;
+
+            portfolio.forEach(holding => {
+                const fundDetails = funds.find(f => f.id === holding.fundId);
+                if (fundDetails) {
+                    totalInvested += holding.quantity * holding.avgNav;
+                    totalCurrentValue += holding.quantity * fundDetails.nav;
+                }
+            });
+
+            const totalReturns = totalCurrentValue - totalInvested;
+            const returnsPercentage = (totalReturns / totalInvested) * 100;
+            const returnsColor = totalReturns >= 0 ? 'text-green-600' : 'text-red-500';
+
+            document.getElementById('portfolio-invested').innerText = formatCurrency(totalInvested);
+            document.getElementById('portfolio-current').innerText = formatCurrency(totalCurrentValue);
+            const returnsEl = document.getElementById('portfolio-returns');
+            returnsEl.innerText = `${formatCurrency(totalReturns)} (${returnsPercentage.toFixed(2)}%)`;
+            returnsEl.className = `text-2xl font-semibold mt-1 ${returnsColor}`;
+        }
+
+        function renderYourInvestments() {
+            const container = document.getElementById('your-investments-list');
+            container.innerHTML = '';
+            const portfolio = mockApiData.userPortfolio;
+            const funds = mockApiData.mutualFunds;
+
+            portfolio.forEach(holding => {
+                const fundDetails = funds.find(f => f.id === holding.fundId);
+                if (!fundDetails) return;
+
+                const investedValue = holding.quantity * holding.avgNav;
+                const currentValue = holding.quantity * fundDetails.nav;
+                const returns = currentValue - investedValue;
+                const returnsPercentage = (returns / investedValue) * 100;
+                const returnsColor = returns >= 0 ? 'text-green-600' : 'text-red-500';
+
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-lg transition cursor-pointer flex justify-between items-center" onclick="showDetailsPage(${fundDetails.id})">
+                        <div>
+                            <h3 class="font-bold text-lg">${fundDetails.name}</h3>
+                            <p class="text-sm text-gray-500">Invested: ${formatCurrency(investedValue)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold text-lg">${formatCurrency(currentValue)}</p>
+                            <p class="text-sm font-medium ${returnsColor}">${returnsPercentage.toFixed(2)}%</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        function renderMarketMovers() {
+            const container = document.getElementById('dashboard-market-movers');
+            container.innerHTML = '';
+            const funds = mockApiData.mutualFunds.slice(0, 4); 
+            funds.forEach(fund => {
+                const changeColor = fund.change >= 0 ? 'text-green-600' : 'text-red-600';
+                const sign = fund.change >= 0 ? '+' : '';
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-lg transition cursor-pointer" onclick="showDetailsPage(${fund.id})">
+                        <h3 class="font-bold truncate">${fund.name}</h3>
+                        <div class="mt-2 flex justify-between items-center">
+                            <p class="text-md font-semibold">₹${fund.nav}</p>
+                            <p class="text-sm ${changeColor}">${sign}${fund.change.toFixed(2)}%</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderMutualFunds(funds = mockApiData.mutualFunds) {
+            const container = document.getElementById('mutual-funds-list');
+            container.innerHTML = '';
+             if (funds.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-8">No funds found.</p>`;
+                return;
+            }
+             funds.forEach(fund => {
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between" onclick="showDetailsPage(${fund.id})">
+                        <div class="mb-4 sm:mb-0">
+                            <h3 class="font-bold text-lg">${fund.name}</h3>
+                            <p class="text-sm text-gray-500">${fund.category} • ${'★'.repeat(fund.rating)}${'☆'.repeat(5-fund.rating)}</p>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-center w-full sm:w-auto">
+                            <div>
+                                <p class="text-xs text-gray-500">1Y</p>
+                                <p class="font-semibold text-green-600">${fund['1y']}%</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">3Y</p>
+                                <p class="font-semibold text-green-600">${fund['3y']}%</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500">5Y</p>
+                                <p class="font-semibold text-green-600">${fund['5y']}%</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        function renderIPOs() {
+             const container = document.getElementById('ipos-list');
+            container.innerHTML = '';
+             mockApiData.ipos.forEach(ipo => {
+                const statusColor = ipo.status === 'Upcoming' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800';
+                container.innerHTML += `
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <div class="flex justify-between items-center mb-4">
+                             <h3 class="font-bold text-lg">${ipo.name}</h3>
+                             <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor}">${ipo.status}</span>
+                        </div>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex justify-between"><span>Issue Price:</span> <span class="font-medium">${ipo.price}</span></div>
+                            <div class="flex justify-between"><span>Open Date:</span> <span class="font-medium">${ipo.openDate}</span></div>
+                            <div class="flex justify-between"><span>Close Date:</span> <span class="font-medium">${ipo.closeDate}</span></div>
+                        </div>
+                        <button class="${ipo.status === 'Upcoming' ? 'bg-main-green hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'} text-white w-full py-2 rounded-lg mt-4 font-semibold transition">
+                           ${ipo.status === 'Upcoming' ? 'Apply Now' : 'View Details'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        // --- DETAILS & CHART ---
+        async function showDetailsPage(fundId) {
+            currentFundId = fundId;
+            const fund = mockApiData.mutualFunds.find(f => f.id === fundId);
+            if (!fund) return;
+            
+            showLoader();
+            await new Promise(r => setTimeout(r, 300));
+            
+            document.getElementById('details-name').innerText = fund.name;
+            document.getElementById('details-category').innerText = fund.category;
+            document.getElementById('details-value').innerText = `₹${fund.nav.toFixed(2)}`;
+            const changeColor = fund.change >= 0 ? 'text-green-600' : 'text-red-500';
+            const sign = fund.change >= 0 ? '+' : '';
+            document.getElementById('details-change').innerText = `${sign}${fund.change.toFixed(2)}% Today`;
+            document.getElementById('details-change').className = `text-sm ${changeColor}`;
+
+            document.getElementById('details-1y').innerText = `${fund['1y']}%`;
+            document.getElementById('details-3y').innerText = `${fund['3y']}%`;
+            document.getElementById('details-5y').innerText = `${fund['5y']}%`;
+            document.getElementById('details-rating').innerHTML = `${'★'.repeat(fund.rating)}${'☆'.repeat(5-fund.rating)}`;
+            
+            document.getElementById('sell-btn-details').onclick = () => showPaymentPage(fund.id, 'sell');
+            document.getElementById('buy-btn-details').onclick = () => showPaymentPage(fund.id, 'buy');
+
+            renderChart(fund);
+            hideLoader();
+            showPage('details');
+        }
+
+        function renderChart(fund) {
+            const ctx = document.getElementById('details-chart').getContext('2d');
+            if (currentChart) {
+                currentChart.destroy();
+            }
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(0, 208, 156, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 208, 156, 0)');
+
+            currentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'NAV Price',
+                        data: fund.graphData,
+                        borderColor: '#00d09c',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { drawBorder: false },
+                            ticks: { callback: (value) => '₹' + value }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                             mode: 'index',
+                             intersect: false,
+                             callbacks: {
+                                label: (context) => {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                             }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // --- PAYMENT SIMULATION ---
+        function showPaymentPage(fundId, action) {
+             const fund = mockApiData.mutualFunds.find(f => f.id === fundId);
+             if (!fund) return;
+             
+             currentTransactionDetails = { fund, action };
+             
+             const title = document.getElementById('payment-title');
+             const fundName = document.getElementById('payment-fund-name');
+             const confirmBtn = document.getElementById('confirm-payment-btn');
+             
+             title.innerText = action === 'buy' ? 'Buy Fund' : 'Sell Fund';
+             fundName.innerText = fund.name;
+             
+             if (action === 'buy') {
+                confirmBtn.className = 'w-full mt-8 bg-main-green text-white py-3 rounded-lg font-semibold transition hover:bg-green-600';
+             } else {
+                 confirmBtn.className = 'w-full mt-8 bg-red-500 text-white py-3 rounded-lg font-semibold transition hover:bg-red-600';
+             }
+
+             confirmBtn.onclick = () => confirmPayment();
+             
+             document.getElementById('amount').value = '';
+             document.getElementById('quantity').value = '';
+
+             showPage('payment');
+        }
+
+        function confirmPayment() {
+            const amountInput = document.getElementById('amount');
+            const quantityInput = document.getElementById('quantity');
+            amountInput.classList.remove('input-error');
+            quantityInput.classList.remove('input-error');
+
+            if (!amountInput.value && !quantityInput.value) {
+                if(!amountInput.value) amountInput.classList.add('input-error');
+                if(!quantityInput.value) quantityInput.classList.add('input-error');
+                return;
+            }
+            
+            const quantity = quantityInput.value || (amountInput.value / currentTransactionDetails.fund.nav).toFixed(2);
+            currentTransactionDetails.quantity = parseFloat(quantity);
+            currentTransactionDetails.price = currentTransactionDetails.fund.nav;
+            
+            showLoader();
+            setTimeout(() => {
+                hideLoader();
+                
+                const now = new Date();
+                
+                // Add to transaction history
+                mockApiData.transactions.push({
+                    fundName: currentTransactionDetails.fund.name,
+                    date: now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+                    quantity: currentTransactionDetails.quantity,
+                    type: currentTransactionDetails.action
+                });
+
+                // Populate confirmation modal
+                document.getElementById('confirmation-fund-name').innerText = `${currentTransactionDetails.action.charAt(0).toUpperCase() + currentTransactionDetails.action.slice(1)} order for ${currentTransactionDetails.fund.name}`;
+                document.getElementById('confirmation-quantity').innerText = currentTransactionDetails.quantity;
+                document.getElementById('confirmation-price').innerText = `₹${currentTransactionDetails.price.toFixed(2)}`;
+                document.getElementById('confirmation-datetime').innerText = `${now.toLocaleDateString()}, ${now.toLocaleTimeString()}`;
+
+                // Show the modal and trigger animation
+                const modal = document.getElementById('confirmation-modal');
+                modal.classList.remove('hidden');
+                const tickPath = modal.querySelector('.tick-path');
+                tickPath.style.animation = 'none';
+                tickPath.offsetHeight; /* trigger reflow */
+                tickPath.style.animation = null; 
+
+            }, 1500);
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            showPage('dashboard');
+            navLinks.forEach(link => link.classList.remove('active'));
+            document.querySelector('.nav-link[data-page="dashboard"]').classList.add('active');
+        }
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDashboard();
+            renderMutualFunds();
+            renderIPOs();
+            calculateSip(); // Initial calculation
+        });
+
+    </script>
+</body>
+</html>
